@@ -1,0 +1,34 @@
+# Starts the Flask backend and the Streamlit frontend as two containers on one private network.
+#   docker compose up --build -d      # build images and start both containers
+#   docker compose ps                 # check status
+#   docker compose down               # stop and remove containers
+services:
+  superkart-backend:
+    build: ./backend_files
+    container_name: superkart-backend
+    ports:
+      - "7860:7860"
+    networks:
+      - superkart-net
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:7860/')\""]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  superkart-frontend:
+    build: ./frontend_files
+    container_name: superkart-frontend
+    ports:
+      - "8501:8501"
+    environment:
+      - BACKEND_URL=http://superkart-backend:7860
+    depends_on:
+      superkart-backend:
+        condition: service_healthy
+    networks:
+      - superkart-net
+
+networks:
+  superkart-net:
+    driver: bridge
